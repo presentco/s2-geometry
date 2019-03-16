@@ -1,0 +1,94 @@
+repositories {
+  jcenter()
+}
+
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+group = 'co.present'
+version = '1.0-SNAPSHOT'
+description = 'Google\'s S2 Geometry Library'
+
+dependencies {
+  implementation 'com.google.guava:guava:27.1-jre'
+
+  testImplementation 'junit:junit:4.12'
+}
+
+task sourcesJar(type: Jar) {
+  from sourceSets.main.allJava
+  archiveClassifier = 'sources'
+}
+
+task javadocJar(type: Jar) {
+  from javadoc
+  archiveClassifier = 'javadoc'
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      artifactId = project.name
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
+      versionMapping {
+        usage('java-api') {
+          fromResolutionOf('runtimeClasspath')
+        }
+        usage('java-runtime') {
+          fromResolutionResult()
+        }
+      }
+      pom {
+        name = project.description
+        description = project.description
+        url = 'http://github.com/presentco/s2-geometry'
+        licenses {
+          license {
+            name = 'The Apache License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          }
+        }
+        developers {
+          developer {
+            id = 'present'
+            name = 'Present Company'
+            email = 'hello@present.co'
+          }
+        }
+        scm {
+          connection = 'scm:git:git@github.com:presentco/s2-geometry.git'
+          developerConnection = 'scm:git:git@github.com:presentco/s2-geometry.git'
+          url = 'http://github.com/presentco/s2-geometry'
+        }
+      }
+    }
+  }
+  repositories {
+    maven {
+      def releasesRepoUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+      def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+      url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+      credentials {
+        // Using findProperty() avoids breaking the build when these properties are missing.
+        username findProperty('sonatypeUsername')
+        password findProperty('sonatypePassword')
+      }
+    }
+  }
+}
+
+signing {
+  sign publishing.publications.mavenJava
+}
+
+javadoc {
+  if (JavaVersion.current().isJava9Compatible()) {
+    options.addBooleanOption('html5', true)
+  }
+
+  // Suppress warnings
+  options.addStringOption('Xdoclint:none', '-quiet')
+}
